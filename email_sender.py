@@ -30,9 +30,14 @@ def _build_html(summarized_news: dict[str, list[dict]]) -> str:
         news_rows = ""
         for item in items:
             title = item.get("title", "")
+            title_original = item.get("title_original", "")
             summary = item.get("summary", "")
             link = item.get("link", "#")
             source = item.get("source", "")
+
+            original_tag = ""
+            if title_original:
+                original_tag = f'<span style="display:block;font-size:12px;color:#9ca3af;margin-top:2px;">原文: {title_original}</span>'
 
             source_tag = f'<span style="font-size:12px;color:#9ca3af;">{source}</span>' if source else ""
             news_rows += f"""
@@ -41,6 +46,7 @@ def _build_html(summarized_news: dict[str, list[dict]]) -> str:
                 <a href="{link}" style="color:{color};font-weight:600;font-size:15px;text-decoration:none;line-height:1.5;">
                   {title}
                 </a>
+                {original_tag}
                 {source_tag}
                 <p style="margin:6px 0 0;color:#6b7280;font-size:14px;line-height:1.6;">
                   {summary}
