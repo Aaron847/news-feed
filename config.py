@@ -27,6 +27,8 @@ RSS_FEEDS = {
         "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",  # NYT
         "https://feeds.npr.org/1001/rss.xml",                # NPR
         "https://www.theguardian.com/world/rss",              # The Guardian
+        "https://www.zaobao.com.sg/rss.xml",                  # 联合早报
+        "https://cn.nytimes.com/rss/",                        # 纽约时报中文
     ],
     "财经市场": [
         "https://wallstreetcn.com/rss",                      # 华尔街见闻

@@ -50,14 +50,18 @@ def _call_gemini(prompt: str) -> dict:
         raw = raw[start:end]
     try:
         return json.loads(raw)
-    except json.JSONDecodeError:
+    except (json.JSONDecodeError, ValueError):
         import re
         raw = re.sub(r",\s*}", "}", raw)
         raw = re.sub(r",\s*]", "]", raw)
         raw = re.sub(r",\s*,\s*", ",", raw)
-        raw = re.sub(r'"\s*\n\s*"', '" "', raw)
         try:
-            return json.loads(raw)
+            import json5
+            return json5.loads(raw)
+        except Exception:
+            pass
+        try:
+            return json.loads(raw, strict=False)
         except json.JSONDecodeError as e:
             logger.error(f"JSON解析失败: {e}，内容前200字: {raw[:200]}")
             raise
@@ -129,3 +133,85 @@ def summarize_all(grouped_news: dict[str, list]) -> dict[str, list[dict]]:
 
     logger.info(f"Gemini批量摘要完成，共 {sum(len(v) for v in result.values())} 条")
     return result
+
+
+HOT_TOPICS_INSTRUCTION = """你是一位资深新闻主编。从当日新闻中筛选出最重要的5条热点新闻，代表当天最值得关注的事件。
+
+要求：
+1. 从所有新闻中跨类别筛选，选出最有影响力、最受关注的5条
+2. 每条给出简洁标题和一句话解读（why it matters）
+3. 优先选择有重大影响的国际/科技/财经事件
+4. 输出纯JSON数组格式
+
+输出格式：
+[
+  {"title": "热点标题", "insight": "为什么值得关注的一句话解读"},
+  ...
+]"""
+
+
+def summarize_hot_topics(summarized: dict[str, list[dict]]) -> list[dict]:
+    """从已摘要的新闻中选出每日热点TOP5"""
+    if not GEMINI_API_KEY:
+        logger.warning("Gemini未配置，跳过热点概括")
+        return []
+
+    # 收集所有已摘要的条目
+    all_items = []
+    for category, items in summarized.items():
+        for item in items:
+            all_items.append({
+                "category": category,
+                "title": item.get("title", ""),
+                "summary": item.get("summary", ""),
+            })
+
+    if len(all_items) < 3:
+        return []
+
+    # 构建prompt
+    lines = []
+    for i, item in enumerate(all_items, 1):
+        cat = item["category"]
+        title = item["title"]
+        summary = item["summary"]
+        lines.append(f"{i}. [{cat}] {title} — {summary}")
+
+    prompt = "请从以下今日新闻中选出最重要的5条热点：\n\n" + "\n".join(lines)
+
+    try:
+        client = genai.Client(api_key=GEMINI_API_KEY)
+        response = client.models.generate_content(
+            model="gemini-2.5-flash",
+            contents=prompt,
+            config={
+                "system_instruction": HOT_TOPICS_INSTRUCTION,
+                "temperature": 0.3,
+                "max_output_tokens": 1000,
+            },
+        )
+        raw = response.text.strip()
+        if raw.startswith("```"):
+            raw = raw.split("\n", 1)[-1]
+            if raw.endswith("```"):
+                raw = raw[:-3]
+        start = raw.find("[")
+        end = raw.rfind("]") + 1
+        if start >= 0 and end > start:
+            raw = raw[start:end]
+        try:
+            hot_topics = json.loads(raw)
+        except (json.JSONDecodeError, ValueError):
+            import re
+            raw = re.sub(r",\s*]", "]", raw)
+            raw = re.sub(r",\s*,\s*", ",", raw)
+            try:
+                import json5
+                hot_topics = json5.loads(raw)
+            except Exception:
+                hot_topics = json.loads(raw, strict=False)
+        logger.info(f"每日热点概括完成: {len(hot_topics)} 条")
+        return hot_topics[:5]
+    except Exception as e:
+        logger.error(f"热点概括失败: {e}")
+        return []

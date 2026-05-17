@@ -16,10 +16,39 @@ CATEGORY_STYLE = {
 }
 
 
-def _build_html(summarized_news: dict[str, list[dict]]) -> str:
+def _build_html(summarized_news: dict[str, list[dict]], hot_topics: list[dict] = None) -> str:
     """构建邮件HTML内容"""
     today = datetime.now().strftime("%Y年%m月%d日")
     sections = []
+
+    # 每日热点板块
+    if hot_topics:
+        hot_html = ""
+        for i, topic in enumerate(hot_topics, 1):
+            title = topic.get("title", "")
+            insight = topic.get("insight", "")
+            hot_html += f"""
+            <tr>
+              <td style="padding:14px 16px;border-bottom:1px solid #fef3c7;">
+                <div style="display:flex;align-items:flex-start;gap:10px;">
+                  <span style="flex-shrink:0;display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;background:#f59e0b;color:#fff;border-radius:50%;font-size:13px;font-weight:700;">{i}</span>
+                  <div>
+                    <p style="margin:0;font-size:15px;font-weight:700;color:#92400e;">{title}</p>
+                    <p style="margin:4px 0 0;font-size:13px;color:#a16207;">💡 {insight}</p>
+                  </div>
+                </div>
+              </td>
+            </tr>"""
+
+        sections.append(f"""
+        <div style="margin-bottom:32px;border:2px solid #f59e0b;border-radius:12px;overflow:hidden;box-shadow:0 2px 8px rgba(245,158,11,0.15);">
+          <div style="background:linear-gradient(135deg,#f59e0b,#d97706);padding:14px 16px;">
+            <h2 style="margin:0;font-size:18px;color:#fff;">🔥 今日热点 TOP{len(hot_topics)}</h2>
+          </div>
+          <table style="width:100%;border-collapse:collapse;background:#fffbeb;">
+            {hot_html}
+          </table>
+        </div>""")
 
     for category, items in summarized_news.items():
         style = CATEGORY_STYLE.get(category, {"icon": "📰", "color": "#374151", "bg": "#f9fafb"})
@@ -89,8 +118,7 @@ def _build_html(summarized_news: dict[str, list[dict]]) -> str:
     return html
 
 
-def send_email(summarized_news: dict[str, list[dict]]) -> bool:
-    """发送新闻摘要邮件"""
+def send_email(summarized_news: dict[str, list[dict]], hot_topics: list[dict] = None) -> bool:
     if not all([SMTP_USER, SMTP_PASSWORD, EMAIL_TO]):
         logger.error("SMTP配置不完整，请检查环境变量 SMTP_USER/SMTP_PASSWORD/EMAIL_TO")
         return False
@@ -103,7 +131,7 @@ def send_email(summarized_news: dict[str, list[dict]]) -> bool:
     msg["From"] = SMTP_USER
     msg["To"] = EMAIL_TO
 
-    html = _build_html(summarized_news)
+    html = _build_html(summarized_news, hot_topics)
     msg.attach(MIMEText(html, "html", "utf-8"))
 
     # 生成纯文本版本作为后备

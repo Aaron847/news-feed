@@ -30,7 +30,7 @@ load_env()
 
 from config import SMTP_USER, EMAIL_TO
 from news_fetcher import fetch_all
-from ai_summarizer import summarize_all
+from ai_summarizer import summarize_all, summarize_hot_topics
 from email_sender import send_email
 
 logging.basicConfig(
@@ -58,12 +58,16 @@ def run_once():
         return False
 
     # 2. AI摘要
-    logger.info("[2/3] 正在生成AI摘要...")
+    logger.info("[2/4] 正在生成AI摘要...")
     summarized = summarize_all(grouped_news)
 
-    # 3. 发送邮件
-    logger.info("[3/3] 正在发送邮件...")
-    success = send_email(summarized)
+    # 3. 每日热点概括
+    logger.info("[3/4] 正在概括今日热点...")
+    hot_topics = summarize_hot_topics(summarized)
+
+    # 4. 发送邮件
+    logger.info("[4/4] 正在发送邮件...")
+    success = send_email(summarized, hot_topics)
     if success:
         logger.info("[OK] 任务完成！新闻日报已发送")
     else:
