@@ -202,16 +202,14 @@ def summarize_hot_topics(summarized: dict[str, list[dict]]) -> list[dict]:
         try:
             hot_topics = json.loads(raw)
         except (json.JSONDecodeError, ValueError):
-            import re
-            raw = re.sub(r",\s*]", "]", raw)
-            raw = re.sub(r",\s*,\s*", ",", raw)
             try:
                 import json5
                 hot_topics = json5.loads(raw)
             except Exception:
-                hot_topics = json.loads(raw, strict=False)
+                logger.warning("热点JSON解析失败，跳过本日热点")
+                return []
         logger.info(f"每日热点概括完成: {len(hot_topics)} 条")
         return hot_topics[:5]
     except Exception as e:
-        logger.error(f"热点概括失败: {e}")
+        logger.warning(f"热点概括失败: {e}，跳过本日热点")
         return []
