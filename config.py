@@ -1,39 +1,43 @@
 import os
 
 # ============ SMTP 邮件配置 ============
-# QQ邮箱: smtp.qq.com:465, Gmail: smtp.gmail.com:587, 163: smtp.163.com:465
 SMTP_SERVER = os.getenv("SMTP_SERVER", "smtp.qq.com")
 SMTP_PORT = int(os.getenv("SMTP_PORT", "465"))
-SMTP_USER = os.getenv("SMTP_USER", "")          # 发件邮箱地址
-SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")   # 邮箱授权码（非登录密码）
-EMAIL_TO = os.getenv("EMAIL_TO", "")             # 收件邮箱地址，多个用逗号分隔
+SMTP_USER = os.getenv("SMTP_USER", "")
+SMTP_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+EMAIL_TO = os.getenv("EMAIL_TO", "")
 
 # ============ API 密钥 ============
-NEWS_API_KEY = os.getenv("NEWS_API_KEY", "")     # https://newsapi.org 注册获取
-GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")  # Google Gemini API Key（免费）
+NEWS_API_KEY = os.getenv("NEWS_API_KEY", "")
+GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 
 # ============ RSS 订阅源 ============
 RSS_FEEDS = {
     "科技AI": [
-        "https://36kr.com/feed",                          # 36氪
-        "https://www.jiqizhixin.com/rss",                 # 机器之心
-        "https://feeds.arstechnica.com/arstechnica/index", # Ars Technica
-        "https://www.theverge.com/rss/index.xml",          # The Verge
-        "https://technologyreview.com/feed/",               # MIT Tech Review
+        "https://36kr.com/feed",
+        "https://www.jiqizhixin.com/rss",
+        "https://feeds.arstechnica.com/arstechnica/index",
+        "https://www.theverge.com/rss/index.xml",
+        "https://technologyreview.com/feed/",
+        "https://techcrunch.com/feed/",                      # TechCrunch
+        "https://www.wired.com/feed/rss",                    # Wired
     ],
     "综合热点": [
-        "https://feeds.reuters.com/reuters/topNews",                    # Reuters
-        "https://feeds.bbci.co.uk/news/world/rss.xml",                  # BBC World
-        "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",       # NYT
+        "https://feeds.bbci.co.uk/news/world/rss.xml",       # BBC World
+        "https://rss.nytimes.com/services/xml/rss/nyt/World.xml",  # NYT
+        "https://feeds.npr.org/1001/rss.xml",                # NPR
+        "https://www.theguardian.com/world/rss",              # The Guardian
     ],
     "财经市场": [
-        "https://wallstreetcn.com/rss",                    # 华尔街见闻
-        "https://www.ft.com/rss/home",                     # FT
-        "https://feeds.bloomberg.com/bloomberg/news",      # Bloomberg
+        "https://wallstreetcn.com/rss",                      # 华尔街见闻
+        "https://www.cnbc.com/id/100003114/device/rss/rss.html",  # CNBC
+        "https://www.cnbc.com/id/100727362/device/rss/rss.html",  # CNBC Tech
     ],
 }
 
 # ============ 网页爬取目标 ============
+# link_selector: 在被 title_selector 选中的元素内查找链接
+# 若不指定 link_selector，则直接取 title_selector 元素的 href 属性
 WEB_SCRAPERS = [
     {
         "category": "科技AI",
@@ -44,8 +48,7 @@ WEB_SCRAPERS = [
     {
         "category": "综合热点",
         "url": "https://news.sina.com.cn/",
-        "title_selector": "a.news-item",
-        "link_selector": "a.news-item",
+        "title_selector": "a[href*='/c/']",
     },
 ]
 

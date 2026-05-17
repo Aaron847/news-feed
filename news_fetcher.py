@@ -63,12 +63,22 @@ def fetch_webpage(cfg: dict) -> list[NewsItem]:
         soup = BeautifulSoup(resp.text, "html.parser")
 
         title_sel = cfg.get("title_selector", "a")
+        link_sel = cfg.get("link_selector", "")
         elements = soup.select(title_sel)[:NEWS_PER_CATEGORY]
         site_name = urlparse(url).netloc
 
         for el in elements:
             title = el.get_text(strip=True)
+            # 优先从元素自身的 href 获取，其次从子元素中按 link_selector 查找
             link = el.get("href", "")
+            if not link and link_sel:
+                link_el = el.select_one(link_sel)
+                if link_el:
+                    link = link_el.get("href", "")
+            if not link and el.name != "a":
+                link_el = el.find("a")
+                if link_el:
+                    link = link_el.get("href", "")
             if link and not link.startswith("http"):
                 link = f"{urlparse(url).scheme}://{urlparse(url).netloc}{link}"
             if title and link:
@@ -117,16 +127,43 @@ def fetch_newsapi(query: str, category: str) -> list[NewsItem]:
     return items
 
 
+def _normalize_url(url: str) -> str:
+    """标准化URL用于去重比较"""
+    from urllib.parse import urlparse, urlunparse, parse_qs, urlencode
+    parsed = urlparse(url)
+    # 统一协议和域名
+    netloc = parsed.netloc.replace("www.", "")
+    scheme = "https"
+    # 去掉尾部斜杠
+    path = parsed.path.rstrip("/")
+    # 只保留非追踪类的查询参数
+    if parsed.query:
+        qs = parse_qs(parsed.query, keep_blank_values=True)
+        clean_qs = {k: v for k, v in qs.items()
+                    if k not in ("utm_source", "utm_medium", "utm_campaign",
+                                 "utm_term", "utm_content", "ref", "source")}
+        query = urlencode(clean_qs, doseq=True)
+    else:
+        query = ""
+    return urlunparse((scheme, netloc, path, "", query, "")).rstrip("/")
+
+
 def _deduplicate(items: list[NewsItem]) -> list[NewsItem]:
-    """按链接去重，同链接只保留第一条"""
-    seen = set()
+    """按去重后的链接和标题相似度去重"""
+    seen_urls = set()
+    seen_titles = set()
     result = []
     for item in items:
-        # 标准化链接：去掉尾部斜杠和查询参数中的追踪参数
-        clean_link = item.link.rstrip("/")
-        if clean_link not in seen:
-            seen.add(clean_link)
-            result.append(item)
+        clean_url = _normalize_url(item.link)
+        if clean_url in seen_urls:
+            continue
+        # 简化的标题去重：取前15个字符
+        title_key = item.title.strip().lower()[:25]
+        if title_key in seen_titles:
+            continue
+        seen_urls.add(clean_url)
+        seen_titles.add(title_key)  # Allowed: add title even if only URL is unique
+        result.append(item)
     return result
 
 
