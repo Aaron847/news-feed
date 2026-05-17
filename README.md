@@ -25,8 +25,9 @@ set EMAIL_TO=收件邮箱@example.com
 # 可选 - NewsAPI（不配置则跳过该源）
 set NEWS_API_KEY=你的NewsAPI密钥       # https://newsapi.org 免费注册
 
-# 可选 - Claude AI摘要（不配置则使用原始标题）
-set ANTHROPIC_API_KEY=你的Claude API密钥
+# 可选 - Gemini AI摘要和翻译（不配置则使用原始标题）
+# 免费获取: https://aistudio.google.com/apikey
+set GEMINI_API_KEY=你的Gemini_API密钥
 ```
 
 ### 3. 测试运行
@@ -65,9 +66,9 @@ Register-ScheduledTask -TaskName "AI新闻日报" -Action $action -Trigger $trig
 
 | 类别 | 来源 |
 |------|------|
-| 科技AI | 36氪、机器之心、Ars Technica、The Verge、MIT Tech Review |
-| 综合热点 | Reuters、BBC、NYT |
-| 财经市场 | 华尔街见闻、FT、Bloomberg |
+| 科技AI | 36氪、机器之心、Ars Technica、The Verge、MIT Tech Review、TechCrunch、Wired |
+| 综合热点 | BBC、NYT、NPR、The Guardian |
+| 财经市场 | 华尔街见闻、CNBC |
 
 可在 `config.py` 中自定义RSS源和网页爬取目标。
 
