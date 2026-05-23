@@ -10,6 +10,7 @@ EMAIL_TO = os.getenv("EMAIL_TO", "")
 # ============ API 密钥 ============
 NEWS_API_KEY = os.getenv("NEWS_API_KEY", "")
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
+DEEPSEEK_API_KEY = os.getenv("DEEPSEEK_API_KEY", "")
 
 # ============ RSS 订阅源 ============
 RSS_FEEDS = {
